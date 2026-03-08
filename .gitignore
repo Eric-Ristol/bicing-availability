@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+.vscode/
+.idea/
+
+#Project artefacts that can be regenerated.
+models/*.joblib
+plots/*.png
+push.log

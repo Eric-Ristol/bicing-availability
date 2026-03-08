@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bicing Availability Predictor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 60px 20px;
+        }
+
+        .container { max-width: 560px; width: 100%; }
+
+        h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+
+        .subtitle { color: #6b7280; font-size: 0.95rem; margin-bottom: 28px; }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 24px; }
+
+        select {
+            flex: 1;
+            padding: 12px 14px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        select:focus { outline: none; border-color: #10b981; }
+
+        button {
+            padding: 12px 22px;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover { background: #059669; }
+        button:disabled { background: #6ee7b7; cursor: not-allowed; }
+
+        .result {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            display: none;
+        }
+
+        .result.visible { display: block; }
+
+        .station-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .station-meta {
+            color: #6b7280;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .bikes-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .bikes-card {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            border-radius: 10px;
+        }
+
+        .bikes-card.now { background: #f0fdf4; }
+        .bikes-card.predicted { background: #ecfdf5; border: 2px solid #10b981; }
+
+        .bikes-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .bikes-card.now .number { color: #374151; }
+        .bikes-card.predicted .number { color: #059669; }
+
+        .bikes-card .label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .capacity-bar {
+            margin-top: 8px;
+        }
+
+        .capacity-bar .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .bar-track {
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill-now {
+            height: 100%;
+            background: #d1d5db;
+            border-radius: 6px;
+            position: absolute;
+            transition: width 0.4s ease;
+        }
+
+        .bar-fill-pred {
+            height: 100%;
+            background: #10b981;
+            border-radius: 6px;
+            position: absolute;
+            transition: width 0.4s ease;
+        }
+
+        .bar-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .bar-legend span::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+
+        .bar-legend .leg-now::before { background: #d1d5db; }
+        .bar-legend .leg-pred::before { background: #10b981; }
+
+        .error { color: #dc2626; font-weight: 600; margin-top: 12px; display: none; }
+        .error.visible { display: block; }
+
+        .tech-note {
+            margin-top: 32px;
+            font-size: 0.8rem;
+            color: #9ca3af;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bicing Availability Predictor</h1>
+        <p class="subtitle">Pick a station and see how many bikes will be available in 15 minutes.</p>
+
+        <div class="input-group">
+            <select id="stationSelect"><option value="">Loading stations...</option></select>
+            <button id="predictBtn" onclick="submitPrediction()">Predict</button>
+        </div>
+
+        <p class="error" id="errorMsg"></p>
+
+        <div class="result" id="resultCard">
+            <p class="station-header" id="stationHeader"></p>
+            <p class="station-meta" id="stationMeta"></p>
+
+            <div class="bikes-row">
+                <div class="bikes-card now">
+                    <div class="number" id="bikesNow">-</div>
+                    <div class="label">bikes now</div>
+                </div>
+                <div class="bikes-card predicted">
+                    <div class="number" id="bikesPred">-</div>
+                    <div class="label">in 15 min</div>
+                </div>
+            </div>
+
+            <div class="capacity-bar">
+                <div class="bar-label">
+                    <span>0 bikes</span>
+                    <span id="capacityLabel">/ 30</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill-now" id="barNow" style="width:0%"></div>
+                    <div class="bar-fill-pred" id="barPred" style="width:0%"></div>
+                </div>
+                <div class="bar-legend">
+                    <span class="leg-now">Now</span>
+                    <span class="leg-pred">Predicted</span>
+                </div>
+            </div>
+        </div>
+
+        <p class="tech-note">
+            Model: RandomForest trained on synthetic 15-min snapshots &bull;
+            20 stations across Barcelona &bull;
+            <a href="/health" style="color:#9ca3af">API health</a>
+        </p>
+    </div>
+
+    <script>
+        var stationSelect = document.getElementById("stationSelect");
+        var predictBtn = document.getElementById("predictBtn");
+        var resultCard = document.getElementById("resultCard");
+        var errorMsg = document.getElementById("errorMsg");
+        var stationsData = {};
+
+        //Load station list on page load.
+        fetch("/stations")
+            .then(function(res) { return res.json(); })
+            .then(function(stations) {
+                stationSelect.innerHTML = "";
+                stations.forEach(function(s) {
+                    stationsData[s.station_id] = s;
+                    var opt = document.createElement("option");
+                    opt.value = s.station_id;
+                    opt.textContent = "Station " + s.station_id + " (" + s.station_type + ", " + s.capacity + " docks)";
+                    stationSelect.appendChild(opt);
+                });
+            })
+            .catch(function() {
+                stationSelect.innerHTML = '<option value="">Failed to load stations</option>';
+            });
+
+        function submitPrediction() {
+            var sid = parseInt(stationSelect.value);
+            if (!sid) return;
+
+            predictBtn.disabled = true;
+            predictBtn.textContent = "...";
+            errorMsg.className = "error";
+
+            fetch("/predict", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({station_id: sid}),
+            })
+            .then(function(res) {
+                if (!res.ok) throw new Error("Server returned " + res.status);
+                return res.json();
+            })
+            .then(function(d) {
+                var info = stationsData[sid] || {};
+                document.getElementById("stationHeader").textContent =
+                    "Station " + d.station_id + " \u2014 " + (info.station_type || "");
+                document.getElementById("stationMeta").textContent =
+                    "Snapshot: " + d.timestamp + " \u00B7 Capacity: " + d.capacity + " docks";
+                document.getElementById("bikesNow").textContent = d.bikes_now;
+                document.getElementById("bikesPred").textContent = d.bikes_predicted_15min;
+                document.getElementById("capacityLabel").textContent = "/ " + d.capacity;
+
+                var pctNow = (d.bikes_now / d.capacity * 100).toFixed(1);
+                var pctPred = (d.bikes_predicted_15min / d.capacity * 100).toFixed(1);
+                document.getElementById("barNow").style.width = pctNow + "%";
+                document.getElementById("barPred").style.width = pctPred + "%";
+
+                resultCard.className = "result visible";
+            })
+            .catch(function(err) {
+                errorMsg.textContent = "Error: " + err.message;
+                errorMsg.className = "error visible";
+            })
+            .finally(function() {
+                predictBtn.disabled = false;
+                predictBtn.textContent = "Predict";
+            });
+        }
+    </script>
+</body>
+</html>
