@@ -1,16 +1,6 @@
-#Everything related to the data: generating synthetic snapshots (useful while
-#you are building the pipeline) and feature engineering on top of them.
-#The synthetic schema matches the real Bicing GBFS feed so you can swap the
-#data source later without changing anything else.
-#
-#Schema (what each row looks like):
-#   station_id        int
-#   station_type      str  (residential / central / university)
-#   lat, lon          float
-#   capacity          int  (total docks at the station)
-#   timestamp         pandas Timestamp (15-min intervals)
-#   bikes_available   int  (the thing we care about)
-#   docks_available   int  (capacity - bikes_available)
+#Synthetic data generator + feature engineering for the Bicing pipeline.
+#The schema matches the real Bicing GBFS feed so you can swap in real
+#data later without changing anything else.
 
 import os
 import numpy as np
@@ -122,17 +112,8 @@ def load_snapshots():
 
 
 def build_features(df):
-    #Turns raw snapshots into a feature matrix for supervised learning.
-    #Each row represents "at time t, at station s, what will bikes_available
-    #be in 15 minutes?"
-    #
-    #Features we add:
-    # - hour of day, minute, day of week, is_weekend (time features)
-    # - bikes_available_lag_1, lag_2, lag_3   (last 3 snapshots, 15/30/45 min ago)
-    # - rolling_mean_1h                        (average over the last hour)
-    # - station_type_one_hot                   (3 columns, residential/central/university)
-    #
-    #Target (y): bikes_available at t + HORIZON_STEPS  = bikes_available 15 min later
+    #Feature engineering: time features, lags, rolling mean, one-hot station type.
+    #Target = bikes_available 15 min from now.
 
     df = df.sort_values(["station_id", "timestamp"]).reset_index(drop=True)
 
