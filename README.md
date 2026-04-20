@@ -4,6 +4,8 @@ Predict how many bikes will be available at a Bicing station in Barcelona **15 m
 
 This is a small but complete time-series ML project: data pipeline, feature engineering, proper time-based train/test split, a persistence baseline, three sklearn/LightGBM models, evaluation, saving, prediction, and tests.
 
+**[Try the live demo on HuggingFace Spaces](https://huggingface.co/spaces/EricRistol/bicing-predictor)**
+
 ---
 
 ## Why this problem

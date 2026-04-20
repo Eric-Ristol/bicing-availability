@@ -155,7 +155,7 @@ def build_features(df):
 
 
 def split_by_time(df, test_frac=0.2):
-    #CRUCIAL for time series: split by time, NOT randomly. The last test_frac
+    #Important for time series: split by time, NOT randomly. The last test_frac
     #of the timeline is the "future" we evaluate on. If you random-split you
     #leak future info into training and get optimistic-but-wrong numbers.
     cutoff = df["timestamp"].quantile(1 - test_frac)
