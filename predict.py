@@ -1,9 +1,4 @@
 #Loads the trained model and predicts bikes_available 15 minutes ahead
-#for a given station.
-#
-#Two ways to use it:
-# 1. Import `predict_station(station_id)` from another script.
-# 2. Run `python predict.py` directly and type a station id.
 
 import os
 import numpy as np
@@ -12,9 +7,7 @@ import joblib
 
 import data
 
-
 MODELS_DIR = "models"
-
 
 def load_saved_model():
     #Loads the model + the feature column order. Raises if train.py
@@ -28,7 +21,6 @@ def load_saved_model():
     model = joblib.load(model_path)
     feature_cols = joblib.load(features_path)
     return model, feature_cols
-
 
 def _latest_features_for_station(station_id):
     #Rebuilds the feature row for the MOST RECENT snapshot of the given
@@ -47,7 +39,6 @@ def _latest_features_for_station(station_id):
         raise RuntimeError("Not enough history for station " + str(station_id))
     latest = station_rows.iloc[-1]
     return latest, feature_cols
-
 
 def predict_station(station_id):
     #Returns a dict with the current bikes, the 15-min-ahead prediction,
@@ -78,7 +69,6 @@ def predict_station(station_id):
         "bikes_predicted_15min": round(pred, 1),
     }
 
-
 def ask_int(prompt, minv, maxv):
     #Helper to read an int in a given range from the terminal.
     while True:
@@ -92,7 +82,6 @@ def ask_int(prompt, minv, maxv):
             continue
         return value
 
-
 def run_interactive():
     df = data.load_snapshots()
     ids = sorted(df["station_id"].unique().tolist())
@@ -105,7 +94,6 @@ def run_interactive():
     print("Latest snapshot: " + result["timestamp"])
     print("  bikes now:       " + str(result["bikes_now"]))
     print("  bikes in 15 min: " + str(result["bikes_predicted_15min"]))
-
 
 if __name__ == "__main__":
     run_interactive()

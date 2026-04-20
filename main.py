@@ -1,8 +1,4 @@
 #Main entry point. Shows a small menu so you can drive the whole project
-#without remembering each script's name.
-#
-#Keeps the same Roman-numeral style I use in my C projects at LaSalle, so if
-#you've seen the Carnival shop code this will feel familiar.
 
 import os
 import sys
@@ -11,11 +7,10 @@ import data
 import train
 import predict
 
-
 def print_menu():
     print("")
     print("================================================")
-    print("   BICING AVAILABILITY PREDICTOR — Main menu")
+    print("   BICING AVAILABILITY PREDICTOR -- Main menu")
     print("================================================")
     print("  I.   Generate a synthetic dataset")
     print("  II.  Train models (baseline + LinearRegression + RandomForest)")
@@ -26,19 +21,16 @@ def print_menu():
     print("  VII. Exit")
     print("------------------------------------------------")
 
-
 def option_generate():
     print("\n>>> Generating synthetic snapshots (20 stations, 14 days)...")
     df = data.generate_snapshots()
     print("    " + str(len(df)) + " rows saved to " + data.DATA_CSV)
-
 
 def option_train():
     print("\n>>> Training models...")
     comp = train.run_training()
     print("\nFinal comparison:")
     print(comp.to_string(index=False))
-
 
 def option_predict():
     try:
@@ -47,7 +39,6 @@ def option_predict():
         print("  [ERR] " + str(e))
     except ValueError as e:
         print("  [ERR] " + str(e))
-
 
 def option_summary():
     if not os.path.exists(data.DATA_CSV):
@@ -65,7 +56,6 @@ def option_summary():
     print("  by station type:")
     print(df.groupby("station_type")["bikes_available"].mean().round(2).to_string())
 
-
 def option_comparison():
     path = os.path.join("models", "comparison.csv")
     if not os.path.exists(path):
@@ -76,14 +66,12 @@ def option_comparison():
     print("\nModel comparison (sorted by RMSE):")
     print(comp.sort_values("rmse").to_string(index=False))
 
-
 def option_api():
     print("\n>>> Starting API server at http://localhost:8000")
     print("    Open that URL in your browser to use the web demo.")
     print("    Press Ctrl+C to stop the server.\n")
     import uvicorn
     uvicorn.run("api.app:app", host="0.0.0.0", port=8000, reload=False)
-
 
 def main():
     while True:
@@ -106,7 +94,6 @@ def main():
             sys.exit(0)
         else:
             print("  [ERR] Unknown option. Try I, II, III, IV, V, VI or VII.")
-
 
 if __name__ == "__main__":
     main()

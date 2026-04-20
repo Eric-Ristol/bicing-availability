@@ -1,24 +1,4 @@
 #Trains models to predict bikes_available 15 minutes into the future.
-#
-#The script compares:
-# 1. A persistence baseline (prediction at t+15 = value at t).
-#    This is THE baseline every time-series predictor must beat.
-# 2. Linear regression (quick sanity check).
-# 3. Random forest (strong baseline for tabular problems).
-# 4. LightGBM (gradient-boosted trees — usually the winner on tabular
-#    time-series problems; fast, handles non-linearities well).
-#
-#All metrics are computed on a future holdout (the last 20% of the timeline),
-#never on randomly-shuffled data. Random splitting on time series is a classic
-#beginner mistake that leaks future info into training.
-#
-#Outputs (into models/):
-#   best_model.joblib       #the winner
-#   feature_names.joblib    #column order at training time
-#   comparison.csv          #metrics per model (MAE / RMSE / R^2)
-#And into plots/:
-#   true_vs_pred.png        #scatter for the best model
-#   feature_importance.png  #top features ranked by LightGBM gain
 
 import os
 import numpy as np
@@ -35,28 +15,22 @@ from lightgbm import LGBMRegressor
 
 import data
 
-
 MODELS_DIR = "models"
 PLOTS_DIR = "plots"
 
-
 def persistence_baseline(test_df):
     #Predicts "the future will look exactly like right now".
-    #For a 15-minute horizon this is surprisingly hard to beat.
     y_true = test_df["target"].values
     y_pred = test_df["bikes_available"].values
     return y_true, y_pred
 
-
 def evaluate(y_true, y_pred):
     #Standard regression metrics. RMSE is the main one for bike counts
-    #because it punishes big misses harder (and big misses are what get
     #users angry when a station is full/empty).
     mae = mean_absolute_error(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
     return {"mae": mae, "rmse": rmse, "r2": r2}
-
 
 def build_models():
     #Dict so it's easy to add/remove candidates. All models are small enough
@@ -80,10 +54,9 @@ def build_models():
         ),
     }
 
-
 def plot_feature_importance(model, feature_cols, out_path):
     #Horizontal bar chart of LightGBM's feature importances (gain).
-    #Gain measures how much each feature reduces loss when used for a split —
+    #Gain measures how much each feature reduces loss when used for a split --
     #a much more meaningful metric than "split count" (which just counts how
     #often the feature was used regardless of how helpful it was).
     importances = model.feature_importances_
@@ -96,11 +69,10 @@ def plot_feature_importance(model, feature_cols, out_path):
     fig, ax = plt.subplots(figsize=(8, max(4, len(names) * 0.45)))
     ax.barh(names, values, color="steelblue")
     ax.set_xlabel("Feature importance (gain)")
-    ax.set_title("LightGBM — feature importance")
+    ax.set_title("LightGBM -- feature importance")
     fig.tight_layout()
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
-
 
 def plot_true_vs_pred(y_true, y_pred, title, out_path):
     #Simple scatter + diagonal. Points close to the y=x line are good
@@ -118,15 +90,8 @@ def plot_true_vs_pred(y_true, y_pred, title, out_path):
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
 
-
 def run_training():
     #Full training flow:
-    # 1. Load or generate data.
-    # 2. Build features.
-    # 3. Time-based split.
-    # 4. Fit each model on train, evaluate on test.
-    # 5. Compare against persistence baseline.
-    # 6. Save the winner + a comparison CSV + a diagnostic plot.
 
     print(">>> Loading snapshots...")
     df = data.load_snapshots()
@@ -143,7 +108,6 @@ def run_training():
 
     #Keep feature names as a DataFrame so LightGBM doesn't warn about
     #"feature names not found". sklearn models ignore the column names, so
-    #this is safe for all three models.
     X_train = train_df[feature_cols]
     y_train = train_df["target"].values
     X_test = test_df[feature_cols]
@@ -202,7 +166,7 @@ def run_training():
         os.path.join(PLOTS_DIR, "true_vs_pred.png"),
     )
 
-    #Feature importance plot — only possible when a tree model won
+    #Feature importance plot -- only possible when a tree model won
     #(LightGBM or RandomForest both expose .feature_importances_).
     if best_model is not None and hasattr(best_model, "feature_importances_"):
         plot_feature_importance(
@@ -215,7 +179,6 @@ def run_training():
     print(">>> Winner: " + best_name + "  RMSE=" + str(round(best_rmse, 3)))
     print(">>> Comparison saved to " + os.path.join(MODELS_DIR, "comparison.csv"))
     return comp
-
 
 if __name__ == "__main__":
     run_training()

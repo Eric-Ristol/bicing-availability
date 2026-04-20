@@ -6,18 +6,15 @@ import os
 import numpy as np
 import pandas as pd
 
-
 DATA_CSV = "data/bicing_snapshots.csv"
 INTERVAL_MIN = 15       #snapshot every 15 minutes (matches a realistic polling cadence)
 HORIZON_STEPS = 1        #predict 1 step ahead = 15 minutes ahead
-
 
 #Station types and how they behave in a typical day.
 #Residential: empty in the morning (everyone leaves), fill up at night.
 #Central: opposite pattern (filled by commuters in the morning).
 #University: fills during lecture hours (9-14), empties after.
 STATION_TYPES = ["residential", "central", "university"]
-
 
 def _make_stations(n_stations=20, seed=42):
     #Builds a small "map" of stations. Coordinates are roughly Barcelona.
@@ -36,10 +33,8 @@ def _make_stations(n_stations=20, seed=42):
         "capacity": capacities,
     })
 
-
 def _daily_pattern(hour, station_type):
     #Returns a number between 0 and 1 representing how "full" the station
-    #tends to be at this hour. It's a hand-crafted sine-ish function so that
     #the ML models have a real daily pattern to learn from.
     if station_type == "residential":
         #Full at night, empty during the day.
@@ -51,7 +46,6 @@ def _daily_pattern(hour, station_type):
         #Bell-shaped around 11-13h.
         return 0.3 + 0.5 * np.exp(-((hour - 12) ** 2) / 8)
     return 0.5
-
 
 def generate_snapshots(n_stations=20, n_days=14, seed=42):
     #Creates a realistic time series of 15-min snapshots for n_stations stations
@@ -102,14 +96,12 @@ def generate_snapshots(n_stations=20, n_days=14, seed=42):
     df.to_csv(DATA_CSV, index=False)
     return df
 
-
 def load_snapshots():
     #Loads the CSV if it exists. If not, generates it first.
     if not os.path.exists(DATA_CSV):
         generate_snapshots()
     df = pd.read_csv(DATA_CSV, parse_dates=["timestamp"])
     return df
-
 
 def build_features(df):
     #Feature engineering: time features, lags, rolling mean, one-hot station type.
@@ -138,7 +130,6 @@ def build_features(df):
     df = pd.get_dummies(df, columns=["station_type"], prefix="type")
 
     #Drop rows with NaN (first few rows per station don't have lags, last
-    #rows don't have a target because it's 15 min into the future).
     df = df.dropna().reset_index(drop=True)
 
     feature_cols = [
@@ -152,7 +143,6 @@ def build_features(df):
         if col not in df.columns:
             df[col] = 0
     return df, feature_cols
-
 
 def split_by_time(df, test_frac=0.2):
     #Important for time series: split by time, NOT randomly. The last test_frac

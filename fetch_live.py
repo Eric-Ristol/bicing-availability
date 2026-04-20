@@ -1,14 +1,4 @@
 #Pulls real Bicing station data from the official GBFS feed and appends a
-#snapshot to data/bicing_snapshots.csv. Meant to be run on your own laptop
-#(this script needs internet access to reach the Barcelona open-data servers).
-#
-#Usage:
-#   python fetch_live.py         #fetches once and exits
-#   python fetch_live.py --loop  #keeps fetching every 15 minutes until you kill it
-#
-#The output CSV has the same columns as data.py's synthetic generator, so the
-#training code works on either. If you only run the synthetic generator you can
-#ignore this file completely.
 
 import os
 import sys
@@ -17,7 +7,6 @@ import argparse
 
 import pandas as pd
 import requests
-
 
 #GBFS = General Bikeshare Feed Specification. Barcelona exposes it here:
 STATION_INFO_URL = "https://opendata-ajuntament.barcelona.cat/data/dataset/bicing/resource/e5adca8d-98bf-42c3-9b9c-364ef0a80494/station_information.json"
@@ -29,13 +18,11 @@ SMOU_STATION_STATUS = "https://www.bicing.barcelona/es/get-stations"
 
 OUT_CSV = "data/bicing_snapshots.csv"
 
-
 def _fetch_json(url, timeout=10):
     #Tiny wrapper so the error message is readable if the endpoint is down.
     resp = requests.get(url, timeout=timeout, headers={"User-Agent": "bicing-predictor/1.0"})
     resp.raise_for_status()
     return resp.json()
-
 
 def fetch_station_info():
     #Returns a DataFrame with one row per station: id, name, lat, lon, capacity.
@@ -55,7 +42,6 @@ def fetch_station_info():
         })
     return pd.DataFrame(rows)
 
-
 def fetch_station_status():
     #Returns a DataFrame: id, bikes_available, docks_available, last_reported.
     data = _fetch_json(STATION_STATUS_URL)
@@ -69,7 +55,6 @@ def fetch_station_status():
             "last_reported": int(s.get("last_reported", 0)),
         })
     return pd.DataFrame(rows)
-
 
 def fetch_one_snapshot():
     #Joins info+status and returns a DataFrame ready to append to our CSV.
@@ -88,14 +73,12 @@ def fetch_one_snapshot():
             "timestamp", "bikes_available", "docks_available"]
     return df[cols]
 
-
 def append_snapshot(df):
     #Appends the snapshot to OUT_CSV (creates the file if needed, with header).
     os.makedirs(os.path.dirname(OUT_CSV), exist_ok=True)
     write_header = not os.path.exists(OUT_CSV)
     df.to_csv(OUT_CSV, mode="a", header=write_header, index=False)
     print("Wrote " + str(len(df)) + " rows to " + OUT_CSV)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch live Bicing snapshots.")
@@ -115,7 +98,6 @@ def main():
         if not args.loop:
             break
         time.sleep(args.interval * 60)
-
 
 if __name__ == "__main__":
     main()

@@ -1,15 +1,4 @@
 #FastAPI wrapper around the Bicing availability predictor.
-#Loads the trained model once at startup, serves predictions via REST.
-#
-#Run it:
-#   uvicorn api.app:app --reload
-#   (or pick option VI from main.py)
-#
-#Endpoints:
-#   GET  /              serves the interactive web page
-#   GET  /stations      lists all station ids with metadata
-#   POST /predict       takes {"station_id": 5}, returns prediction
-#   GET  /health        simple health check
 
 import os
 import sys
@@ -25,7 +14,6 @@ from pydantic import BaseModel
 import predict
 import data
 
-
 app = FastAPI(
     title="Bicing Availability Predictor API",
     description="Predicts bikes available at a Barcelona Bicing station 15 minutes ahead.",
@@ -40,10 +28,8 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 model = None
 feature_cols = None
 
-
 class PredictRequest(BaseModel):
     station_id: int
-
 
 class PredictResponse(BaseModel):
     station_id: int
@@ -52,7 +38,6 @@ class PredictResponse(BaseModel):
     bikes_now: int
     bikes_predicted_15min: float
 
-
 @app.on_event("startup")
 def load_on_startup():
     global model, feature_cols
@@ -60,11 +45,9 @@ def load_on_startup():
     model, feature_cols = predict.load_saved_model()
     print("Model ready.")
 
-
 @app.get("/")
 def serve_frontend():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
-
 
 @app.get("/stations")
 def list_stations():
@@ -82,7 +65,6 @@ def list_stations():
         })
     return result
 
-
 @app.post("/predict", response_model=PredictResponse)
 def predict_bikes(req: PredictRequest):
     if model is None:
@@ -94,7 +76,6 @@ def predict_bikes(req: PredictRequest):
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
     return result
-
 
 @app.get("/health")
 def health():

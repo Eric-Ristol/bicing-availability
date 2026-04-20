@@ -1,7 +1,4 @@
 #Basic pytest tests. Covers the happy path of each main function.
-#Run with:  pytest -q
-#
-#All tests generate a fresh synthetic dataset first so they're self-contained.
 
 import os
 import pandas as pd
@@ -9,7 +6,6 @@ import pandas as pd
 import data
 import train
 import predict
-
 
 def test_generate_creates_csv():
     #Generating the dataset should create the CSV file with the expected columns.
@@ -21,7 +17,6 @@ def test_generate_creates_csv():
     #10 stations * 5 days * 96 snapshots/day = 4800 rows.
     assert len(df) == 10 * 5 * 96
 
-
 def test_generate_default_size():
     #Regenerate with the default size so later tests have enough history.
     df = data.generate_snapshots()
@@ -29,7 +24,6 @@ def test_generate_default_size():
     #bikes_available must always be within [0, capacity].
     assert (df["bikes_available"] >= 0).all()
     assert (df["bikes_available"] <= df["capacity"]).all()
-
 
 def test_build_features_adds_expected_columns():
     #All feature columns should be present and contain no NaNs after the dropna.
@@ -41,7 +35,6 @@ def test_build_features_adds_expected_columns():
     assert "target" in feat_df.columns
     assert feat_df["target"].isna().sum() == 0
 
-
 def test_time_based_split_has_no_leakage():
     #Train must end strictly at or before the start of test. If there's
     #overlap we have a leakage bug.
@@ -51,14 +44,12 @@ def test_time_based_split_has_no_leakage():
     assert len(train_df) > 0 and len(test_df) > 0
     assert train_df["timestamp"].max() <= test_df["timestamp"].min()
 
-
 def test_training_saves_model():
     #Running the full training should produce the model + feature list + comparison.
     train.run_training()
     assert os.path.exists(os.path.join("models", "best_model.joblib"))
     assert os.path.exists(os.path.join("models", "feature_names.joblib"))
     assert os.path.exists(os.path.join("models", "comparison.csv"))
-
 
 def test_training_beats_persistence_baseline():
     #The winning model should be at least as good as the persistence baseline.
@@ -69,7 +60,6 @@ def test_training_beats_persistence_baseline():
     best_rmse = comp["rmse"].min()
     assert best_rmse <= persistence_rmse + 1e-6, \
         "Best RMSE (" + str(best_rmse) + ") is worse than persistence (" + str(persistence_rmse) + ")"
-
 
 def test_predict_returns_sensible_value():
     #A prediction for any known station should be between 0 and its capacity.
