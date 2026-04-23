@@ -5,6 +5,7 @@ venv/
 .DS_Store
 .vscode/
 .idea/
+.env
 
 #Project artefacts that can be regenerated.
 models/*.joblib
